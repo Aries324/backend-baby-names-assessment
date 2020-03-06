@@ -1,18 +1,19 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+import re
+import sys
+import codecs
+
+# -*- coding: utf-8 - *-
 
 # BabyNames python coding exercise.
 
 # Copyright 2010 Google Inc.
 # Licensed under the Apache License, Version 2.0
-# http://www.apache.org/licenses/LICENSE-2.0
+# http: // www.apache.org/licenses/LICENSE-2.0
 
 # Google's Python Class
-# http://code.google.com/edu/languages/google-python-class/
+# http: // code.google.com/edu/languages/google-python-class/
 
-import sys
-import re
-import argparse
 
 """
 Define the extract_names() function below and change main()
@@ -41,48 +42,64 @@ Suggested milestones for incremental development:
 
 def extract_names(filename):
     """
-    Given a single file name for babyXXXX.html, returns a single list starting
-    with the year string followed by the name-rank strings in alphabetical order.
+    Given a file name for baby.html, returns a list starting with the year string
+    followed by the name-rank strings in alphabetical order.
     ['2006', 'Aaliyah 91', Aaron 57', 'Abagail 895', ' ...]
     """
-    names = []
-    # +++your code here+++
-    return names
+    year = filename[4:8]
+    html = codecs.open(filename, "r")
+    babynames_list = []
+    names_used = []
+
+    for line in html.readlines():
+        # print line
+        year = re.search(r'Popularity\sin\s(\d\d\d\d)', line)
+        match = re.search("<td>(.*)</td><td>(.*)</td><td>(.*)</td>", line)
+        if year:
+            year_name = year.group()[14:18]
+            babynames_list.append(year_name)
+        if match:
+            name = match.group(2)
+            number = match.group(1)
+            if name not in names_used:
+                babynames_list.append(name + " " + number)
+                names_used.append(name)
+    babynames_list.sort()
+    return '\n'.join(babynames_list) + '\n'
 
 
-def create_parser():
-    """Create a cmd line parser object with 2 argument definitions"""
-    parser = argparse.ArgumentParser(description="Extracts and alphabetizes baby names from html.")
-    parser.add_argument(
-        '--summaryfile', help='creates a summary file', action='store_true')
-    # The nargs option instructs the parser to expect 1 or more filenames.
-    # It will also expand wildcards just like the shell, e.g. 'baby*.html' will work.
-    parser.add_argument('files', help='filename(s) to parse', nargs='+')
-    return parser
+def main():
+    # This command-line parsing code is provided.
+    # Make a list of command line arguments, omitting the [0] element
+    # which is the script itself.
+    args = sys.argv[1:]
 
-
-def main(args):
-    # Create a command-line parser object with parsing rules
-    parser = create_parser()
-    # Run the parser to collect command-line arguments into a NAMESPACE called 'ns'
-    ns = parser.parse_args(args)
-
-    if not ns:
-        parser.print_usage()
+    if not args:
+        print('usage: [--summaryfile] file [file ...]')
         sys.exit(1)
 
-    file_list = ns.files
-
-    # option flag
-    create_summary = ns.summaryfile
-
-    # For each filename, call `extract_names` with that single file.
-    # Format the resulting list a vertical list (separated by newline \n)
-    # Use the create_summary flag to decide whether to print the list,
-    # or to write the list to a summary file e.g. `baby1990.html.summary`
+   # Notice the summary flag and remove it from args if it is present.
+    summary = False
+    if args[0] == '--summaryfile':
+        summary = True
+        del args[0]
 
     # +++your code here+++
+    # For each filename, get the names, then either print the text output
+    # or write it to a summary file
+    for filename in args:
+        names = extract_names(filename)
+        text = '\n'.join(names)
+
+        if summary:
+            new_summary_file = open(filename + '.summary', 'w')
+            new_summary_file.write(text + '\n')
+            new_summary_file.close()
+        else:
+            print(text)
+
+        extract_names(args[0])
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
