@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import re
 import sys
-import codecs
+
 
 # -*- coding: utf-8 - *-
 
@@ -46,26 +46,37 @@ def extract_names(filename):
     followed by the name-rank strings in alphabetical order.
     ['2006', 'Aaliyah 91', Aaron 57', 'Abagail 895', ' ...]
     """
-    year = filename[4:8]
-    html = codecs.open(filename, "r")
-    babynames_list = []
-    names_used = []
 
-    for line in html.readlines():
-        # print line
-        year = re.search(r'Popularity\sin\s(\d\d\d\d)', line)
-        match = re.search("<td>(.*)</td><td>(.*)</td><td>(.*)</td>", line)
-        if year:
-            year_name = year.group()[14:18]
-            babynames_list.append(year_name)
-        if match:
-            name = match.group(2)
-            number = match.group(1)
-            if name not in names_used:
-                babynames_list.append(name + " " + number)
-                names_used.append(name)
-    babynames_list.sort()
-    return '\n'.join(babynames_list) + '\n'
+    # The list [year, name_and_rank, name_and_rank, ...] we'll eventually return.
+    names = []
+
+    # Open and read the file.
+    with open(filename, 'rU') as f:
+        text = f.read()
+   
+    year_match = re.search(r'Popularity\sin\s(\d\d\d\d)', text)
+    if not year_match:
+        # We didn't find a year, so we'll exit with an error message.
+        sys.stderr.write('Couldn\'t find the year!\n')
+        sys.exit(1)
+    year = year_match.group(1)
+    names.append(year)
+
+    tuples = re.findall(r'<td>(\d+)</td><td>(\w+)</td>\<td>(\w+)</td>', text)
+    names_to_rank = {}
+    for rank_tuple in tuples:
+        (rank, boyname, girlname) = rank_tuple  # unpack the tuple into 3 vars
+        if boyname not in names_to_rank:
+            names_to_rank[boyname] = rank
+        if girlname not in names_to_rank:
+            names_to_rank[girlname] = rank
+   
+    sorted_names = sorted(names_to_rank.keys())
+
+    for name in sorted_names:
+        names.append(name + " " + names_to_rank[name])
+
+    return names
 
 
 def main():
@@ -78,27 +89,23 @@ def main():
         print('usage: [--summaryfile] file [file ...]')
         sys.exit(1)
 
-   # Notice the summary flag and remove it from args if it is present.
+    # Notice the summary flag and remove it from args if it is present.
     summary = False
     if args[0] == '--summaryfile':
         summary = True
         del args[0]
 
-    # +++your code here+++
-    # For each filename, get the names, then either print the text output
-    # or write it to a summary file
     for filename in args:
         names = extract_names(filename)
+
         text = '\n'.join(names)
 
         if summary:
-            new_summary_file = open(filename + '.summary', 'w')
-            new_summary_file.write(text + '\n')
-            new_summary_file.close()
+            with open(filename + '.summary', 'w') as output_file:
+                output_file.write(text + '\n')
+                output_file.close()
         else:
             print(text)
-
-        extract_names(args[0])
 
 
 if __name__ == '__main__':
