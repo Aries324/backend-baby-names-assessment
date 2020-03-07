@@ -53,7 +53,7 @@ def extract_names(filename):
     # Open and read the file.
     with open(filename, 'rU') as f:
         text = f.read()
-   
+
     year_match = re.search(r'Popularity\sin\s(\d\d\d\d)', text)
     if not year_match:
         # We didn't find a year, so we'll exit with an error message.
@@ -70,7 +70,7 @@ def extract_names(filename):
             names_to_rank[boyname] = rank
         if girlname not in names_to_rank:
             names_to_rank[girlname] = rank
-   
+
     sorted_names = sorted(names_to_rank.keys())
 
     for name in sorted_names:
