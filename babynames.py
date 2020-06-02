@@ -47,7 +47,7 @@ def extract_names(filename):
     ['2006', 'Aaliyah 91', Aaron 57', 'Abagail 895', ' ...]
     """
 
-    # The list [year, name_and_rank, name_and_rank, ...] we'll eventually return.
+    # The list [year, name_and_rank, name_and_rank, ...] we'll eventually return!
     names = []
 
     # Open and read the file.
