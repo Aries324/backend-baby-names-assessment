@@ -1,18 +1,19 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+import re
+import sys
+
+
+# -*- coding: utf-8 - *-
 
 # BabyNames python coding exercise.
 
 # Copyright 2010 Google Inc.
 # Licensed under the Apache License, Version 2.0
-# http://www.apache.org/licenses/LICENSE-2.0
+# http: // www.apache.org/licenses/LICENSE-2.0
 
 # Google's Python Class
-# http://code.google.com/edu/languages/google-python-class/
+# http: // code.google.com/edu/languages/google-python-class/
 
-import sys
-import re
-import argparse
 
 """
 Define the extract_names() function below and change main()
@@ -41,48 +42,71 @@ Suggested milestones for incremental development:
 
 def extract_names(filename):
     """
-    Given a single file name for babyXXXX.html, returns a single list starting
-    with the year string followed by the name-rank strings in alphabetical order.
+    Given a file name for baby.html, returns a list starting with the year string
+    followed by the name-rank strings in alphabetical order.
     ['2006', 'Aaliyah 91', Aaron 57', 'Abagail 895', ' ...]
     """
+
+    # The list [year, name_and_rank, name_and_rank, ...] we'll eventually return!
     names = []
-    # +++your code here+++
+
+    # Open and read the file.
+    with open(filename, 'rU') as f:
+        text = f.read()
+
+    year_match = re.search(r'Popularity\sin\s(\d\d\d\d)', text)
+    if not year_match:
+        # We didn't find a year, so we'll exit with an error message.
+        sys.stderr.write('Couldn\'t find the year!\n')
+        sys.exit(1)
+    year = year_match.group(1)
+    names.append(year)
+
+    tuples = re.findall(r'<td>(\d+)</td><td>(\w+)</td>\<td>(\w+)</td>', text)
+    names_to_rank = {}
+    for rank_tuple in tuples:
+        (rank, boyname, girlname) = rank_tuple  # unpack the tuple into 3 vars
+        if boyname not in names_to_rank:
+            names_to_rank[boyname] = rank
+        if girlname not in names_to_rank:
+            names_to_rank[girlname] = rank
+
+    sorted_names = sorted(names_to_rank.keys())
+
+    for name in sorted_names:
+        names.append(name + " " + names_to_rank[name])
+
     return names
 
 
-def create_parser():
-    """Create a cmd line parser object with 2 argument definitions"""
-    parser = argparse.ArgumentParser(description="Extracts and alphabetizes baby names from html.")
-    parser.add_argument(
-        '--summaryfile', help='creates a summary file', action='store_true')
-    # The nargs option instructs the parser to expect 1 or more filenames.
-    # It will also expand wildcards just like the shell, e.g. 'baby*.html' will work.
-    parser.add_argument('files', help='filename(s) to parse', nargs='+')
-    return parser
+def main():
+    # This command-line parsing code is provided.
+    # Make a list of command line arguments, omitting the [0] element
+    # which is the script itself.
+    args = sys.argv[1:]
 
-
-def main(args):
-    # Create a command-line parser object with parsing rules
-    parser = create_parser()
-    # Run the parser to collect command-line arguments into a NAMESPACE called 'ns'
-    ns = parser.parse_args(args)
-
-    if not ns:
-        parser.print_usage()
+    if not args:
+        print('usage: [--summaryfile] file [file ...]')
         sys.exit(1)
 
-    file_list = ns.files
+    # Notice the summary flag and remove it from args if it is present.
+    summary = False
+    if args[0] == '--summaryfile':
+        summary = True
+        del args[0]
 
-    # option flag
-    create_summary = ns.summaryfile
+    for filename in args:
+        names = extract_names(filename)
 
-    # For each filename, call `extract_names` with that single file.
-    # Format the resulting list a vertical list (separated by newline \n)
-    # Use the create_summary flag to decide whether to print the list,
-    # or to write the list to a summary file e.g. `baby1990.html.summary`
+        text = '\n'.join(names)
 
-    # +++your code here+++
+        if summary:
+            with open(filename + '.summary', 'w') as output_file:
+                output_file.write(text + '\n')
+                output_file.close()
+        else:
+            print(text)
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
